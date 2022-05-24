@@ -5,19 +5,23 @@ import (
 	"database/sql"
 )
 
-func GetSqlExecutor(ctx context.Context, name string) SqlExecutor {
+func GetSqlExecutor(ctx context.Context, name string) TxDB {
 	dbProvider := GetDBProvider(name)
 	dbObj := dbProvider.GetTxOrDB(ctx)
-	return dbObj.(SqlExecutor)
+	return dbObj.(TxDB)
 }
 
-// SqlExecutor (SQL Go database connection) is a wrapper for SQL database handler ( can be *sql.DB or *sql.Tx)
+// TxDB (SQL Go database connection) is a wrapper for SQL database handler ( can be *sql.DB or *sql.Tx)
 // It should be able to work with all SQL data that follows SQL standard.
-type SqlExecutor interface {
-	Exec(query string, args ...interface{}) (sql.Result, error)
+type TxDB interface {
+	Exec(query string, args ...any) (sql.Result, error)
 	Prepare(query string) (*sql.Stmt, error)
-	Query(query string, args ...interface{}) (*sql.Rows, error)
-	QueryRow(query string, args ...interface{}) *sql.Row
+	Query(query string, args ...any) (*sql.Rows, error)
+	QueryRow(query string, args ...any) *sql.Row
+
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
 type SqlTxManager struct {
