@@ -64,7 +64,13 @@ func (r *RuleParser) Parse(method string) (q *query.Query, err error) {
 	}
 
 	remaining = remaining[nextIndex:]
-	subjectModifier, subjectModifierArgs, nextIndex, err := r.parseSubjectModifier(subject, remaining)
+	subjectModifier, nextIndex, err := r.parseSubjectModifier(subject, remaining)
+	if err != nil {
+		return
+	}
+
+	remaining = remaining[nextIndex:]
+	subjectModifierArgsOpt, nextIndex, err := r.parseSubjectModifierArg(subjectModifier, remaining)
 	if err != nil {
 		return
 	}
@@ -89,9 +95,8 @@ func (r *RuleParser) Parse(method string) (q *query.Query, err error) {
 		err = fmt.Errorf("method rule parse fail: can not parse [%s]", remaining)
 		return
 	}
-	q = query.New(subject, query.WithSubjectModifier(subjectModifier),
-		query.WithSubjectModifierArgs(subjectModifierArgs), query.WithFilterGroup(filterGroup),
-		query.WithSorts(sorts),
+	q = query.New(subject, query.WithSubjectModifier(subjectModifier), subjectModifierArgsOpt,
+		query.WithFilterGroup(filterGroup), query.WithSorts(sorts),
 	)
 	return
 }
@@ -115,7 +120,7 @@ func (r *RuleParser) parseSubject(str string) (s *query.Subject, nextIndex int, 
 }
 
 func (r *RuleParser) parseSubjectModifier(subject *query.Subject, str string) (
-	modifier *query.SubjectModifier, args map[query.SubjectModifierArg]any, nextIndex int, err error) {
+	modifier *query.SubjectModifier, nextIndex int, err error) {
 
 	for _, m := range query.SubjectModifiers {
 		if !m.Subjects()[subject] {
@@ -132,8 +137,14 @@ func (r *RuleParser) parseSubjectModifier(subject *query.Subject, str string) (
 			break
 		}
 	}
+	return
+}
 
-	if query.SubjectModifierTop == modifier {
+func (r *RuleParser) parseSubjectModifierArg(modifier *query.SubjectModifier, str string,
+) (opt query.Option, nextIndex int, err error) {
+
+	switch modifier {
+	case query.SubjectModifierTop:
 		topN := -1
 		topLen := 0
 		for i := nextIndex + 1; i < len(str); i++ {
@@ -150,7 +161,10 @@ func (r *RuleParser) parseSubjectModifier(subject *query.Subject, str string) (
 			return
 		}
 		nextIndex += topLen
-		args = map[query.SubjectModifierArg]any{query.SubjectModifierArgLimit: topN}
+		pager := query.NewPageRequest(1, topN, false)
+		opt = query.WithPager(pager)
+	default:
+		opt = query.WithSubjectModifierArgs(nil)
 	}
 	return
 }

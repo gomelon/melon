@@ -12,7 +12,7 @@ type simpleTable struct {
 
 type TableOption func(table *simpleTable)
 
-func WithSchema(schema string) TableOption {
+func WithTableSchema(schema string) TableOption {
 	return func(table *simpleTable) {
 		table.schema = schema
 	}

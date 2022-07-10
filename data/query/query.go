@@ -6,14 +6,14 @@ import (
 )
 
 type Query struct {
-	//TODO 要添加projection及pageable
-	//要添加table的赋值
+	//TODO 要添加projection
 	table               Table
 	subject             *Subject
 	subjectModifier     *SubjectModifier
 	subjectModifierArgs map[SubjectModifierArg]any
 	filterGroup         *FilterGroup
 	sorts               []*Sort
+	pager               Pager
 }
 
 func New(subject *Subject, opts ...Option) *Query {
@@ -82,6 +82,12 @@ func WithSorts(sorts []*Sort) Option {
 	}
 }
 
+func WithPager(pager Pager) Option {
+	return func(q *Query) {
+		q.pager = pager
+	}
+}
+
 func (q Query) String() string {
 	builder := strings.Builder{}
 	builder.Grow(256)
@@ -110,6 +116,11 @@ func (q Query) String() string {
 			}
 			builder.WriteString(sort.String())
 		}
+	}
+
+	if q.pager != nil {
+		builder.WriteRune(' ')
+		builder.WriteString(q.pager.String())
 	}
 	return builder.String()
 }

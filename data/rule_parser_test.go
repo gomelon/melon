@@ -172,7 +172,6 @@ func TestRuleParser_Parse_Find(t *testing.T) {
 			wantQuery: query.New(
 				query.SubjectFind,
 				query.WithSubjectModifier(query.SubjectModifierTop),
-				query.WithSubjectModifierArgs(map[query.SubjectModifierArg]any{query.SubjectModifierArgLimit: 10}),
 				query.WithFilterGroup(
 					query.NewFilterGroupWithFilters([]*query.Filter{
 						query.NewFilter("Id", query.PredicateIs),
@@ -184,6 +183,7 @@ func TestRuleParser_Parse_Find(t *testing.T) {
 						query.NewSort("Firstname", query.DirectionAsc),
 					},
 				),
+				query.WithPager(query.NewPageRequest(1, 10, false)),
 			),
 			wantErr: false,
 		},
