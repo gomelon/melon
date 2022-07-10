@@ -1,4 +1,4 @@
-package melon
+package data
 
 import (
 	"context"
