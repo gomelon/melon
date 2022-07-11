@@ -5,6 +5,7 @@ import "fmt"
 type Pager interface {
 	Page() int
 	PageSize() int
+	Offset() int
 	SearchCount() bool
 	String() string
 }
@@ -37,6 +38,13 @@ func (p *PageRequest) PageSize() int {
 
 func (p *PageRequest) SetPageSize(pageSize int) {
 	p.pageSize = pageSize
+}
+
+func (p *PageRequest) Offset() int {
+	if p.page <= 1 {
+		return 0
+	}
+	return (p.page - 1) * p.pageSize
 }
 
 func (p *PageRequest) SearchCount() bool {

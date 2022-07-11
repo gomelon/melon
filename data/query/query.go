@@ -26,6 +26,22 @@ func New(subject *Subject, opts ...Option) *Query {
 	return q
 }
 
+func (q *Query) With(opts ...Option) *Query {
+	newQuery := &Query{
+		table:               q.table,
+		subject:             q.subject,
+		subjectModifier:     q.subjectModifier,
+		subjectModifierArgs: q.subjectModifierArgs,
+		filterGroup:         q.filterGroup,
+		sorts:               q.sorts,
+		pager:               q.pager,
+	}
+	for _, opt := range opts {
+		opt(newQuery)
+	}
+	return newQuery
+}
+
 func (q *Query) Table() Table {
 	return q.table
 }
@@ -48,6 +64,10 @@ func (q *Query) FilterGroup() *FilterGroup {
 
 func (q *Query) Sorts() []*Sort {
 	return q.sorts
+}
+
+func (q *Query) Pager() Pager {
+	return q.pager
 }
 
 type Option func(q *Query)

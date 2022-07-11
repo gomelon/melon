@@ -61,7 +61,3 @@ var SubjectModifiers = []*SubjectModifier{
 }
 
 type SubjectModifierArg string
-
-const (
-	SubjectModifierArgLimit = "Limit"
-)
