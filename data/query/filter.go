@@ -29,13 +29,23 @@ func (fg *FilterGroup) NumValue() (num int) {
 	return
 }
 
-func (fg *FilterGroup) FillValue(values []any) error {
+func (fg *FilterGroup) FillValues(values []any) error {
 	numValue := fg.NumValue()
 	if numValue != len(values) {
 		return fmt.Errorf("expected %d values, but actual %d values", numValue, len(values))
 	}
 
-	fg.fillValue(values)
+	fg.fillValues(values)
+	return nil
+}
+
+func (fg *FilterGroup) FillNamedArgs(namedArgs []string) error {
+	numValue := fg.NumValue()
+	if numValue != len(namedArgs) {
+		return fmt.Errorf("expected %d values, but actual %d values", numValue, len(namedArgs))
+	}
+
+	fg.fillNamedArgs(namedArgs)
 	return nil
 }
 
@@ -43,12 +53,12 @@ func (fg *FilterGroup) IsEmpty() bool {
 	return len(fg.groups) == 0 && len(fg.filters) == 0
 }
 
-func (fg *FilterGroup) fillValue(values []any) {
+func (fg *FilterGroup) fillValues(values []any) {
 	remainingValues := values
 	if fg.groups != nil {
 		for _, group := range fg.groups {
 			numValue := group.NumValue()
-			group.fillValue(remainingValues[:numValue])
+			group.fillValues(remainingValues[:numValue])
 			if numValue >= len(remainingValues) {
 				continue
 			}
@@ -58,11 +68,35 @@ func (fg *FilterGroup) fillValue(values []any) {
 	if fg.filters != nil {
 		for _, filter := range fg.filters {
 			numValue := filter.NumValue()
-			filter.fillValue(remainingValues[:numValue])
+			filter.fillValues(remainingValues[:numValue])
 			if numValue >= len(remainingValues) {
 				continue
 			}
 			remainingValues = remainingValues[numValue:]
+		}
+	}
+}
+
+func (fg *FilterGroup) fillNamedArgs(namedArgs []string) {
+	remainingNamedArgs := namedArgs
+	if fg.groups != nil {
+		for _, group := range fg.groups {
+			numValue := group.NumValue()
+			group.fillNamedArgs(remainingNamedArgs[:numValue])
+			if numValue >= len(remainingNamedArgs) {
+				continue
+			}
+			remainingNamedArgs = remainingNamedArgs[numValue:]
+		}
+	}
+	if fg.filters != nil {
+		for _, filter := range fg.filters {
+			numValue := filter.NumValue()
+			filter.fillNamedArgs(remainingNamedArgs[:numValue])
+			if numValue >= len(remainingNamedArgs) {
+				continue
+			}
+			remainingNamedArgs = remainingNamedArgs[numValue:]
 		}
 	}
 }
@@ -103,7 +137,8 @@ type Filter struct {
 	fieldName string
 	predicate *Predicate
 	modifier  *FilterModifier
-	value     any
+	values    []any
+	namedArgs []string
 }
 
 func NewFilter(fieldName string, predicate *Predicate, opts ...FilterOption) *Filter {
@@ -124,17 +159,23 @@ func (f *Filter) FillValue(values []any) error {
 		return fmt.Errorf("expected %d values, but actual %d values", numValue, len(values))
 	}
 
-	f.fillValue(values)
+	f.fillValues(values)
 	return nil
 }
 
-func (f *Filter) fillValue(values []any) {
+func (f *Filter) fillValues(values []any) {
 	switch f.predicate.numArgs {
 	case 0:
-	case 1:
-		f.value = values[0]
 	default:
-		f.value = values
+		f.values = values
+	}
+}
+
+func (f *Filter) fillNamedArgs(namedArgs []string) {
+	switch f.predicate.numArgs {
+	case 0:
+	default:
+		f.namedArgs = namedArgs
 	}
 }
 
@@ -150,6 +191,14 @@ func (f *Filter) FilterModifier() *FilterModifier {
 	return f.modifier
 }
 
+func (f *Filter) Values() []any {
+	return f.values
+}
+
+func (f *Filter) NamedArgs() []string {
+	return f.namedArgs
+}
+
 func (f Filter) String() string {
 	builder := strings.Builder{}
 	builder.Grow(256)
@@ -162,17 +211,29 @@ func (f Filter) String() string {
 		builder.WriteRune(')')
 	}
 	builder.WriteRune(' ')
-	builder.WriteString(fmt.Sprintf("%#v", f.value))
+	if f.namedArgs != nil {
+		builder.WriteString(":")
+		builder.WriteString(strings.Join(f.namedArgs, ", :"))
+	} else if f.values != nil {
+		builder.WriteString(fmt.Sprintf("%#v", f.values))
+	}
 	return builder.String()
 }
 
 type FilterOption func(filter *Filter)
 
-func WithFilterValue(value any) FilterOption {
+func WithFilterValues(values ...any) FilterOption {
 	return func(filter *Filter) {
-		filter.value = value
+		filter.values = values
 	}
 }
+
+func WithFilterNamedArgs(namedArgs ...string) FilterOption {
+	return func(filter *Filter) {
+		filter.namedArgs = namedArgs
+	}
+}
+
 func WithFilterModifier(modifier *FilterModifier) FilterOption {
 	return func(filter *Filter) {
 		filter.modifier = modifier

@@ -32,6 +32,9 @@ func (t *RDBTranslator) Translate(ctx context.Context, query *Query) (result str
 }
 
 func (t *RDBTranslator) TranslateTable(ctx context.Context, table Table) (string, error) {
+	if table == nil {
+		return t.engin.Escape("$$_table_$$"), nil
+	}
 	if len(table.Schema()) == 0 {
 		return t.engin.Escape(table.Name()), nil
 	}
@@ -197,29 +200,30 @@ func (t *RDBTranslator) TranslateFilter(ctx context.Context, f *Filter) (result 
 	column := e.Escape(e.BuildColumn(f.FieldName()))
 	switch f.Predicate() {
 	case PredicateIs:
-		result = fmt.Sprintf("(%s = ?)", column)
+		result = fmt.Sprintf("(%s = %s)", column, t.namedArgOrValue(f, 0))
 	case PredicateIsNot:
-		result = fmt.Sprintf("(%s != ?)", column)
+		result = fmt.Sprintf("(%s != %s)", column, t.namedArgOrValue(f, 0))
 	case PredicateGT:
-		result = fmt.Sprintf("(%s > ?)", column)
+		result = fmt.Sprintf("(%s > %s)", column, t.namedArgOrValue(f, 0))
 	case PredicateLT:
-		result = fmt.Sprintf("(%s < ?)", column)
+		result = fmt.Sprintf("(%s < %s)", column, t.namedArgOrValue(f, 0))
 	case PredicateGTE:
-		result = fmt.Sprintf("(%s >= ?)", column)
+		result = fmt.Sprintf("(%s >= %s)", column, t.namedArgOrValue(f, 0))
 	case PredicateLTE:
-		result = fmt.Sprintf("(%s <= ?)", column)
+		result = fmt.Sprintf("(%s <= %s)", column, t.namedArgOrValue(f, 0))
 	case PredicateBetween:
-		result = fmt.Sprintf("(%s >= ? AND %s <= ?)", column, column)
+		result = fmt.Sprintf("(%s >= %s AND %s <= %s)",
+			column, column, t.namedArgOrValue(f, 0), t.namedArgOrValue(f, 1))
 	case PredicateIn:
-		result = fmt.Sprintf("(%s in (?))", column)
+		result = fmt.Sprintf("(%s in (%s))", column, t.namedArgOrValue(f, 0))
 	case PredicateNotIn:
-		result = fmt.Sprintf("(%s NOT IN (?))", column)
+		result = fmt.Sprintf("(%s NOT IN (%s))", column, t.namedArgOrValue(f, 0))
 	case PredicateContains:
-		result = fmt.Sprintf("(%s %s)", column, e.BuildContains("?"))
+		result = fmt.Sprintf("(%s %s)", column, e.BuildContains(t.namedArgOrValue(f, 0)))
 	case PredicateStartsWith:
-		result = fmt.Sprintf("(%s %s)", column, e.BuildStartsWith("?"))
+		result = fmt.Sprintf("(%s %s)", column, e.BuildStartsWith(t.namedArgOrValue(f, 0)))
 	case PredicateEndsWith:
-		result = fmt.Sprintf("(%s %s)", column, e.BuildEndsWith("?"))
+		result = fmt.Sprintf("(%s %s)", column, e.BuildEndsWith(t.namedArgOrValue(f, 0)))
 	case PredicateIsNull:
 		result = fmt.Sprintf("(%s IS NULL)", column)
 	case PredicateIsNotNull:
@@ -307,4 +311,11 @@ func (t *RDBTranslator) build(builder *strings.Builder, subjectStr string, table
 		builder.WriteRune(' ')
 		builder.WriteString(pagerStr)
 	}
+}
+
+func (t *RDBTranslator) namedArgOrValue(f *Filter, index int) string {
+	if f.NamedArgs() != nil {
+		return ":" + f.NamedArgs()[index]
+	}
+	return "?"
 }
