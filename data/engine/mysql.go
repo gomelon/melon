@@ -8,7 +8,7 @@ import (
 
 func UseMySQL() {
 	mySQL := NewMySQL()
-	Engines[strings.ToUpper(mySQL.Dialect())] = mySQL
+	Engines[mySQL.Dialect()] = mySQL
 }
 
 type MySQL struct {
@@ -19,7 +19,7 @@ func NewMySQL() *MySQL {
 }
 
 func (m *MySQL) Dialect() string {
-	return "MySQL"
+	return "mysql"
 }
 
 func (m *MySQL) Escape(str string) string {
