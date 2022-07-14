@@ -101,6 +101,11 @@ func (r *RuleParser) Parse(method string) (q *query.Query, err error) {
 	return
 }
 
+func (r *RuleParser) ParseSubject(method string) (*query.Subject, error) {
+	subject, _, err := r.parseSubject(method)
+	return subject, err
+}
+
 func (r *RuleParser) parseSubject(str string) (s *query.Subject, nextIndex int, err error) {
 	keywords := make([]string, 0, len(query.Subjects)*2)
 	for _, subject := range query.Subjects {

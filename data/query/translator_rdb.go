@@ -79,9 +79,9 @@ func (t *RDBTranslator) TranslateCount(ctx context.Context, query *Query) (resul
 	var subjectStr string
 	switch query.subjectModifier {
 	case SubjectModifierDistinct:
-		subjectStr = "SELECT COUNT(DISTINCT *) FROM "
+		subjectStr = "SELECT COUNT(DISTINCT *) AS X FROM "
 	default:
-		subjectStr = "SELECT COUNT(*) FROM "
+		subjectStr = "SELECT COUNT(*) AS X FROM "
 	}
 	tableStr, err := t.TranslateTable(ctx, query.Table())
 	if err != nil {
@@ -100,7 +100,7 @@ func (t *RDBTranslator) TranslateCount(ctx context.Context, query *Query) (resul
 }
 
 func (t *RDBTranslator) TranslateExists(ctx context.Context, query *Query) (result string, err error) {
-	subjectStr := "SELECT 1 FROM "
+	subjectStr := "SELECT 1 AS X FROM "
 	tableStr, err := t.TranslateTable(ctx, query.Table())
 	if err != nil {
 		return

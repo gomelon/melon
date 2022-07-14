@@ -13,6 +13,10 @@ func (s *Subject) Sortable() bool {
 	return s.sortable
 }
 
+func (s *Subject) Name() string {
+	return s.keywords[0]
+}
+
 func (s Subject) String() string {
 	return s.keywords[0]
 }
