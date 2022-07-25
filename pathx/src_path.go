@@ -1,4 +1,4 @@
-package runtimex
+package pathx
 
 import (
 	"log"
@@ -8,6 +8,23 @@ import (
 	"runtime"
 	"strings"
 )
+
+func ModuleSrcPath(inputPath string) (goModDirPath string, err error) {
+	goModDirPath = inputPath
+	for i := 0; i < 10; i++ {
+		goModFilePath := strings.Join([]string{goModDirPath, string(filepath.Separator) + "go.mod"}, "")
+		_, err = os.Stat(goModFilePath)
+		if err == nil {
+			return
+		} else if os.IsNotExist(err) {
+			goModDirPath = path.Dir(goModDirPath)
+			continue
+		} else {
+			return
+		}
+	}
+	return
+}
 
 // MainSrcPath get the main.go absolute path
 func MainSrcPath() string {
