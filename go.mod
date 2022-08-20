@@ -2,4 +2,4 @@ module github.com/gomelon/melon
 
 go 1.18
 
-require github.com/gohutool/boot4go-pathmatcher v1.0.0 // indirect
+require github.com/huandu/xstrings v1.3.2
