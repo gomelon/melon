@@ -210,9 +210,7 @@ func (r *RuleParser) parseSort(str string) (sorts []*query.Sort, nextIndex int, 
 	nextIndex = len(str)
 	parts := make([]string, 0, 2)
 	for _, part1 := range r.splitByKeyword(orderByStr, string(query.DirectionAsc)) {
-		for _, part2 := range r.splitByKeyword(part1, string(query.DirectionDesc)) {
-			parts = append(parts, part2)
-		}
+		parts = append(parts, r.splitByKeyword(part1, string(query.DirectionDesc))...)
 	}
 	sorts = make([]*query.Sort, 0, len(parts))
 	for _, part := range parts {
